@@ -1,59 +1,17 @@
 var express=require("express");
 var bodyParser=require("body-parser");
 const {MongoClient} = require('mongodb');
-
-// const mongoose = require('mongoose');
-// mongoose.connect('mongodb://localhost:27017/gfg');
-// var db=mongoose.connection;
-// db.on('error', console.log.bind(console, "connection error"));
-// db.once('open', function(callback){
-// 	console.log("connection succeeded");
-// })
-
-async function main(){
-    /**
-     * Connection URI. Update <username>, <password>, and <your-cluster-url> to reflect your cluster.
-     * See https://docs.mongodb.com/ecosystem/drivers/node/ for more details
-     */
-    const uri = "mongodb+srv://admin:admin@cluster0.eqgvban.mongodb.net/?retryWrites=true&w=majority&appName=AtlasApp";
- 
-
-    const client = new MongoClient(uri);
- 
-    try {
-        // Connect to the MongoDB cluster
-        await client.connect();
- 
-        // Make the appropriate DB calls
-        await  listDatabases(client);
- 
-    } catch (e) {
-        console.error(e);
-    } finally {
-        await client.close();
-    }
-}
-
-main().catch(console.error);
-
-async function listDatabases(client){
-    databasesList = await client.db().admin().listDatabases();
- 
-    console.log("Databases:");
-    databasesList.databases.forEach(db => console.log(` - ${db.name}`));
-};
-
-
+const uri = "mongodb+srv://admin:admin@cluster0.eqgvban.mongodb.net/?retryWrites=true&w=majority&appName=AtlasApp";
+const client = new MongoClient(uri);
+   
 var app=express()
-
-
 app.use(bodyParser.json());
 app.use(express.static('public'));
 app.use(bodyParser.urlencoded({
 	extended: true
 }));
 
-app.post('/sign_up', function(req,res){
+app.post('/sign_up', async function(req,res){
 	var name = req.body.name;
 	var email =req.body.email;
 	var pass = req.body.password;
@@ -65,12 +23,22 @@ app.post('/sign_up', function(req,res){
 		"password":pass,
 		"phone":phone
 	}
-db.collection('details').insertOne(data,function(err, collection){
-		if (err) throw err;
-		console.log("Record inserted Successfully");
-			
-	});
-		
+
+    try {
+        // Connect to the MongoDB cluster
+        await client.connect();
+        const db = client.db('student_reg_db');
+        const col = db.collection('student_reg_coll');
+
+        // Insert the document into the specified collection        
+        const studentData = await col.insertOne(data);
+
+    } catch (e) {
+        console.error(e);
+    } finally {
+        await client.close();
+    }
+
 	return res.redirect('signup_success.html');
 })
 
